@@ -1,0 +1,379 @@
+---
+title: "T2"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(tidyverse)
+```
+
+Ejercicio 1
+
+#Apartado 1
+
+```{r}
+x1 <- c(0:3)
+x1
+p_x1 <- c(64/125,48/125,12/125,1/125)
+p_x1
+```
+
+
+```{r}
+theo_mean = (1*(48/125) + 2 * (12/125) + 3 * (1/125))                    
+theo_mean
+```
+
+```{r}
+theo_var <- sum((x1 - theo_mean)^2*p_x1)
+theo_var
+```
+
+
+
+
+
+#Apartado 2
+
+```{r}
+k = 100000
+mediasMuestrales = replicate(k, {
+  muestra = sample(0:3, size=10, replace=TRUE, prob = c(64,48,12,1))
+  mean(muestra)
+})
+head(mediasMuestrales,10)
+mm_tibble <- as_tibble(mediasMuestrales)
+```
+
+```{r}
+mm_tibble %>% 
+  ggplot() + 
+    geom_histogram(mapping = aes(x=value, y = stat(density)), fill="lightblue", color ="lightblue") +
+    geom_density(mapping = aes(value), color = "red")
+```
+
+
+```{r}
+hist(mediasMuestrales, main=" ", col="lightblue")
+abline(v = mean(mediasMuestrales), lty=2, lwd=5, col="red")
+```
+
+
+
+```{r}
+k = 30
+mediasMuestrales_30 = replicate(k, {
+  muestra = sample(0:3, size=100, replace=TRUE, prob = c(64,48,12,1))
+  mean(muestra)
+})
+```
+
+```{r}
+mediasMuestrales_30 %>% 
+  as_tibble %>% 
+ggplot() + 
+  geom_histogram(mapping = aes(x=value, y = stat(density)), fill="lightblue", color ="lightblue") +
+  geom_density(mapping = aes(value), color = "red")
+```
+
+##Apartado 3
+
+##Sabiendo que las variables x1 y x2 son independientes, la suma x1 + x2 puede tomar cualquier valor entre 0 y 5. El valor mínimo se calculca sumando los dos mas pequeños que x1 y x2 pueden tomar. En este caso es 0+0. El valor máximo que la suma de estas variables pueden tomar es 5, ya que si sumamos los valores mas grandes de las variables (3+2) el resultado nos da 5.
+
+##Tabla de probabilidad
+```{r}
+x2 <- c(0:2)
+x2
+p_x2 <- c(1/2,1/4,1/4)
+p_x2
+```
+
+```{r}
+p = c(64/125,48/125,12/125,1/125)*rep(c(1/2,1/4,1/4), each = 4)
+p
+```
+
+
+```{r}
+(X1 = rep(0:3, each =3))
+(X2 = rep(0:2, each = 4))
+a = X1 + X2
+(tabla = data.frame(a, X1, X2, p))
+```
+
+
+Apartado 4
+
+```{r}
+(media_x2 = sum(x2*p_x2))
+```
+
+```{r}
+(media_teorica_de_la_suma = media_x2 + theo_mean)
+```
+
+
+```{r}
+set.seed(1)
+k=100000
+suma_medias = replicate(k, {
+  m = sample(0:3, size = 1, replace = TRUE, prob = c(64/125, 48/125, 12/125, 1/125))
+  + sample(0:2, size = 1, replace = TRUE, prob = c(1/2,1/4,1/4))
+  mean(m)
+
+})
+head(suma_medias)
+mean(suma_medias)
+```
+
+
+
+Ejercicio 2: Datos limpios
+
+```{r}
+test <- read.csv(file = 'testResults.csv')
+
+```
+Ejercicio 2
+
+```{r}
+resultados <- read.csv(file = "testResults.csv")
+head(resultados,10)
+```
+##Para que un conjunto de datos se considere limpio debe de cumplir una serie de requisitos.
+
+## 1) Cada variable debe de tener su propia columna
+
+## 2) Cada observación debe de tener su propia fila
+
+## 3) Cada valor su propia celda
+
+##En este caso, la tabla no cumple los principios de tidy data ya que hay columnas que no representan una variable, sino valores, como por ejemplo (week 1, week 2, week 3, week 4, week 5). Estas columnas representan la nota (valor) sacada en un examen. Para converitr la tabla a una tidy, debemos crear otra columna (resultado del test), y la semana en la que se ha hecho el test. 
+
+```{r}
+t_resul <- as_tibble(resultados)
+head(t_resul,10)
+```
+Vamos a usar separate para separar gender_age en dos variables nuevas, una para la edad y otra para el genero
+```{r}
+t <- t_resul %>%
+  separate(col  =  gender_age, into =  c("gender", "age"), sep  =  "_", convert = TRUE)
+
+head(t,10)
+```
+
+Hacemos un pivot_longer, con más filas, una para cada semana, y metemos los resultados del test en la variable
+```{r}
+t %>% 
+  pivot_longer(c("week1", "week2", "week3", "week4", "week5"), values_to = "resultado del test", names_to = "semana")
+```
+
+
+
+
+
+Ejercicio 3
+#Lectura de R4DS
+
+#7.5.1.1 Exercises
+
+```{r}
+library(nycflights13)
+
+```
+
+```{r}
+flights
+```
+```{r}
+flights %>% 
+  mutate("cancelled" = is.na(dep_time))
+flights
+```
+```{r}
+cancelled_flights <- flights %>% 
+  filter(cancelled = TRUE)
+```
+
+```{r}
+ggplot(data = flights, mapping = aes(x=carrier, y=dep_delay)) +
+  geom_boxplot()
+```
+```{r}
+flights
+```
+
+
+```{r}
+flights %>% 
+  mutate(cancelled = is.na(dep_time),
+  sched_hour = sched_dep_time %/% 100,
+  sched_min = sched_dep_time %% 100,
+  sched_dep_time = sched_min + sched_hour /60) %>% 
+  ggplot() +
+  geom_boxplot(mapping = aes(x = cancelled, y = sched_dep_time), fill = "lightblue", color = "blue")
+```
+Diamantes
+
+```{r}
+diamonds
+```
+
+
+```{r}
+cov_dia <-select(diamonds, -c(color, cut, clarity))
+cov(cov_dia)
+(cor(diamonds$price, select(diamonds, carat, depth, table, x, y, z)))
+
+```
+#Las variable mas importante para predecir el precio de un diamante son los quilates
+
+
+
+
+```{r}
+ggplot(data = diamonds, mapping = aes(x = carat, y = price), fill = "magenta") +
+  geom_point() +
+  geom_smooth(se = TRUE)
+```
+
+
+```{r}
+ggplot(data =diamonds, mapping = aes(x = carat, y = cut), fill="lightblue", color="blue") +
+  geom_boxplot(fill="lightblue", color = "blue") +
+  geom_smooth(se =FALSE)
+```
+
+
+
+```{r}
+library(ggstance)
+ggplot(diamonds, mapping = aes(x=price, y=cut)) +
+  geom_boxploth(fill = "lightblue", color = "orange")
+```
+
+
+
+```{r}
+#ggplot(diamonds) +
+  #lvplot::geom_lv(aes(x= cut, y=price, fill= ..LV..)
+
+
+```
+##El geom_lv es similar al geom_boxplot, pero separa los datos en 12 grupos diferentes, en vez de en cuartiles (como el box plot). Geom_lv se utiliza cuando la cantidad de datos es relativamente mas grande, ya que se pueden separar en mas grupos. 
+
+
+```{r}
+ggplot(data=diamonds, mapping = aes(x=price, y=stat(density))) +
+  geom_freqpoly(mapping = aes(color=cut), binwidth = 600)
+```
+
+```{r}
+ggplot(data=diamonds, mapping = aes(x=cut, y=price)) +
+  geom_violin()
+```
+
+```{r}
+ggplot(diamonds, mapping = aes(x=price, y=stat(density)), color = "blue") +
+  geom_histogram() +
+  facet_wrap(~cut,ncol = 5)
+```
+
+```{r}
+library(ggbeeswarm)
+```
+
+
+
+```{r}
+ggplot(data=mpg, mapping = aes(y=hwy, x = class)) +
+  geom_quasirandom()
+  
+```
+
+```{r}
+ggplot(data=mpg, mapping = aes(y=hwy, x = class)) +
+  geom_beeswarm(method="tukey")
+```
+
+#Sección 12.6.1 R4DS
+
+```{r}
+tidyr::who
+```
+
+```{r}
+who
+```
+
+```{r}
+who1 <- who %>% 
+  pivot_longer(
+    cols = new_sp_m014:newrel_f65, 
+    names_to = "key", 
+    values_to = "cases", 
+    values_drop_na = TRUE
+  )
+who1
+```
+
+```{r}
+who1 %>% 
+  count(key)
+```
+
+```{r}
+who2 <- who1 %>% 
+  mutate(key = stringr::str_replace(key, "newrel", "new_rel"))
+who2
+```
+
+```{r}
+who3 <- who2 %>% 
+  separate(key, c("new", "type", "sexage"), sep = "_")
+who3
+```
+
+```{r}
+who4 <- who3 %>% 
+  select(-new, -iso2, -iso3)
+who4
+```
+
+```{r}
+who5 <- who4 %>% 
+  separate(sexage, c("sex", "age"), sep = 1)
+who5
+```
+
+```{r}
+who5 %>% 
+  group_by(country,year, sex) %>%
+  filter(year>"1997") %>% 
+  filter(cases > 10000) %>% 
+  summarise(cases=sum(cases)) %>% 
+  unite(country_sex, country, sex, remove =FALSE) %>% 
+  ggplot(aes(x = year, y = cases, group = country_sex, colour = sex)) +
+  geom_line()
+
+```
+
+```{r}
+who5 %>% 
+  group_by(country, year, sex) %>%
+  filter(year>"1997") %>% 
+  filter(cases < 100) %>% 
+  summarise(cases=sum(cases)) %>% 
+  unite(country_sex, country, sex, remove =FALSE) %>% 
+  ggplot(aes(x = year, y = cases, group = country_sex, colour = sex)) +
+  geom_line()
+```
+
+```{r}
+who5 
+```
+
